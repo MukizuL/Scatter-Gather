@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"flag"
 	"fmt"
 	"net/http"
 	"os"
@@ -16,9 +15,6 @@ type application struct {
 }
 
 func main() {
-	addr := flag.String("addr", ":8080", "HTTP network address")
-	flag.Parse()
-
 	logger, err := zap.NewProduction()
 	if err != nil {
 		fmt.Printf("error initializing logger: %s\n", err.Error())
@@ -35,8 +31,10 @@ func main() {
 		os.Exit(1)
 	}
 
+	addr := getEnv("ADDR", ":8080")
+
 	srv := &http.Server{
-		Addr:         *addr,
+		Addr:         addr,
 		Handler:      app.routes(),
 		ErrorLog:     stdErrLogger,
 		IdleTimeout:  time.Minute,
@@ -44,7 +42,7 @@ func main() {
 		WriteTimeout: 10 * time.Second,
 	}
 
-	logger.Info("starting http server on", zap.String("addr", *addr))
+	logger.Info("starting http server on", zap.String("addr", addr))
 
 	err = srv.ListenAndServe()
 	if !errors.Is(err, http.ErrServerClosed) {
